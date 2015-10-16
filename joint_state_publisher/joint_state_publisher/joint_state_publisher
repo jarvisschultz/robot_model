@@ -252,7 +252,7 @@ class JointStatePublisherGui(wx.Frame):
             row.Add(label, 1, wx.ALIGN_CENTER_VERTICAL)
 
             display = wx.TextCtrl (panel, value=str(0),
-                        style=wx.TE_READONLY | wx.ALIGN_RIGHT)
+                                   style=wx.ALIGN_RIGHT | wx.TE_PROCESS_ENTER)
 
             row.Add(display, flag= wx.ALIGN_RIGHT| wx.ALIGN_CENTER_VERTICAL)
             box.Add(row, 1, wx.EXPAND)
@@ -266,6 +266,8 @@ class JointStatePublisherGui(wx.Frame):
 
         self.UpdateSlidersEvent, self.EVT_UPDATESLIDERS = wx.lib.newevent.NewEvent()
         self.Bind(self.EVT_UPDATESLIDERS, self.updateSliders)
+
+        self.Bind(wx.EVT_TEXT_ENTER, self.text_entered_event)
 
         ### Buttons ###
         self.randbutton = wx.Button(panel, 1, 'Randomize')
@@ -323,6 +325,30 @@ class JointStatePublisherGui(wx.Frame):
             joint_info['slidervalue'] = self.valueToSlider(random.uniform(joint['min'], joint['max']), joint)
         self.update_values()
 
+    def text_entered_event(self, event):
+        rospy.loginfo("Joint value entered")
+        obj = event.GetEventObject()
+        for (name,joint_info) in self.joint_map.items():
+            if obj is joint_info['display']:
+                joint = joint_info['joint']
+                value = self.validate_value(joint, obj.GetValue())
+                if value:
+                    joint_info['slidervalue'] = self.valueToSlider(value, joint)
+        self.update_values()
+
+    def validate_value(self, joint, value):
+        try:
+            valf = float(value)
+        except ValueError:
+            rospy.loginfo("Invalid value entered for joint")
+            return False
+        if valf < joint['min']:
+            valf = joint['min']
+            rospy.loginfo("Clipping entered value to min")
+        if valf > joint['max']:
+            valf = joint['max']
+            rospy.loginfo("Clipping entered value to max")
+        return valf
 
     def sliderUpdate(self, event):
         for (name,joint_info) in self.joint_map.items():
