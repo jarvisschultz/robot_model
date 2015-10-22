@@ -332,7 +332,7 @@ class JointStatePublisherGui(wx.Frame):
             if obj is joint_info['display']:
                 joint = joint_info['joint']
                 value = self.validate_value(joint, obj.GetValue())
-                if value:
+                if value is not False:
                     joint_info['slidervalue'] = self.valueToSlider(value, joint)
         self.update_values()
 
